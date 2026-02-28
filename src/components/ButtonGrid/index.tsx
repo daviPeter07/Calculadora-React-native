@@ -2,17 +2,7 @@ import { View } from "react-native";
 import { Button } from "../Button";
 import { styles } from "./index.style";
 import { Delete, Divide, History, Radical } from "lucide-react";
-
-interface ButtonGridProps {
-  onNumberPress: (num: string) => void;
-  onDecimalPress: () => void;
-  onOperatorPress: (operator: string) => void;
-  onACPress: () => void;
-  onBackspacePress: () => void;
-  onSquareRootPress: () => void;
-  onEqualPress: () => void;
-  onHistoryPress: () => void;
-}
+import type { ButtonGridProps } from "@/types/ButtonGrid";
 
 export function ButtonGrid({
   onNumberPress,

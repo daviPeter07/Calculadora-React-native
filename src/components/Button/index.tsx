@@ -1,13 +1,6 @@
 import { Pressable, Text } from "react-native";
 import { styles } from "./index.style";
-import { ReactNode } from "react";
-
-interface ButtonProps {
-  label?: string;
-  icon?: ReactNode;
-  onPress: () => void;
-  variant?: "default" | "operator" | "ac" | "equal";
-}
+import { ButtonProps } from "@/types/Button";
 
 export function Button({
   label,

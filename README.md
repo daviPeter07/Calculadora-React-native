@@ -25,17 +25,20 @@ Aplicação mobile de calculadora desenvolvida com React Native e Expo, como pro
 ## Instalação
 
 1. Clonar o repositório:
+
 ```bash
 git clone https://github.com/daviPeter07/Calculadora-React-native
 cd Calculadora-React-native
 ```
 
 2. Instalar dependências:
+
 ```bash
 pnpm install
 ```
 
 3. Iniciar a aplicação:
+
 ```bash
 pnpm start
 ```
@@ -80,4 +83,3 @@ pnpm format:check   # Verifica formatação sem fazer alterações
 ## Documentação Técnica
 
 Para entender a arquitetura completa da aplicação, estrutura de componentes, fluxo de dados e detalhamento de cada funcionalidade, consulte o arquivo [ARCHITECTURE.md](ARCHITECTURE.md).
-

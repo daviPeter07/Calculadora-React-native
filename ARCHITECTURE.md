@@ -3,6 +3,7 @@
 ## Visão Geral
 
 A aplicação segue um padrão de arquitetura em camadas, separando responsabilidades em:
+
 - Camada de Apresentação (UI Components)
 - Camada de Lógica de Negócio (Custom Hooks)
 - Camada de Tipos (Type Definitions)
@@ -34,6 +35,7 @@ Histórico persiste em AsyncStorage
 ### 1. Camada de Apresentação (src/components/)
 
 #### Button Component
+
 - Componente agnóstico de domínio
 - Responsável apenas por renderizar UI
 - Aceita props `onPress` para ações
@@ -49,17 +51,20 @@ interface ButtonProps {
 ```
 
 #### ButtonGrid Component
+
 - Compõe múltiplos Button components
 - Organiza layout da calculadora
 - Passa handlers do hook para os botões
 - Define a estrutura visual do teclado
 
 #### Display Component
+
 - Apresenta valor numérico ao usuário
 - Recebe valor via prop
 - Sem lógica de cálculo
 
 #### Header, HistoryButton
+
 - Componentes auxiliares
 - Complementam a interface
 
@@ -88,6 +93,7 @@ const waitingForNewValueRef = useRef<boolean>(false);
 #### Handlers Explicados
 
 **handleNumberPress(num: string)**
+
 ```
 1. Se waitingForNewValue estiver true, limpa display
 2. Se num === "0" e display === "0", não adiciona
@@ -96,6 +102,7 @@ const waitingForNewValueRef = useRef<boolean>(false);
 ```
 
 **handleOperator(operator: string)**
+
 ```
 1. Se previousValue estiver null, guarda valor atual em previousValue
 2. Guarda operator em operationRef
@@ -104,6 +111,7 @@ const waitingForNewValueRef = useRef<boolean>(false);
 ```
 
 **handleEqual()**
+
 ```
 1. Se previousValue e operation existem:
    a. Converte display para número
@@ -115,6 +123,7 @@ const waitingForNewValueRef = useRef<boolean>(false);
 ```
 
 **handleAC()**
+
 ```
 1. Reseta display para "0"
 2. Limpa previousValue
@@ -123,18 +132,21 @@ const waitingForNewValueRef = useRef<boolean>(false);
 ```
 
 **handleBackspace()**
+
 ```
 1. Se display.length === 1, seta display para "0"
 2. Caso contrário, remove último caractere
 ```
 
 **handleDecimal()**
+
 ```
 1. Se já há ponto no display, não faz nada
 2. Caso contrário, adiciona ponto ao final
 ```
 
 **handleSquareRoot()**
+
 ```
 1. Converte display para número
 2. Calcula Math.sqrt()
@@ -144,6 +156,7 @@ const waitingForNewValueRef = useRef<boolean>(false);
 ```
 
 **handleClearHistory()**
+
 ```
 1. Limpa array history
 2. Remove dados do AsyncStorage
@@ -151,6 +164,7 @@ const waitingForNewValueRef = useRef<boolean>(false);
 ```
 
 **formatDisplay(value: number)**
+
 ```
 Formata números maiores que 1000:
 - 1000 até 1.000.000 = "XXXk" (10k, 100k, etc)
@@ -159,6 +173,7 @@ Formata números maiores que 1000:
 ```
 
 **loadHistory()** (useEffect ao montar)
+
 ```
 1. Carrega dados do AsyncStorage com chave "calculator_history"
 2. Se encontrar, parseia JSON e atualiza history
@@ -166,6 +181,7 @@ Formata números maiores que 1000:
 ```
 
 **saveHistory(newHistory: string[])**
+
 ```
 1. Serializa history como JSON
 2. Salva em AsyncStorage com chave "calculator_history"
@@ -173,6 +189,7 @@ Formata números maiores que 1000:
 ```
 
 **addToHistory(calculation: string)**
+
 ```
 1. Cria novo array com calculation adicionado
 2. Atualiza history com setHistory
@@ -182,14 +199,17 @@ Formata números maiores que 1000:
 ### 3. Camada de Tipos (src/types/)
 
 #### ButtonProps
+
 Define a interface para o componente Button com propriedades opcionais.
 
 #### ButtonGridProps
+
 Define a interface para o componente ButtonGrid com 8 handlers necessários.
 
 ### 4. Camada de Persistência
 
 Utiliza AsyncStorage para guardar o histórico:
+
 - Chave: "calculator_history"
 - Valor: Array de strings em formato JSON
 - Carregado ao inicializar o componente
@@ -233,18 +253,15 @@ ButtonGrid é composto por múltiplos Buttons
 1. Usuário pressiona "5"
    - handleNumberPress("5") é chamado
    - display muda para "5"
-   
 2. Usuário pressiona "+"
    - handleOperator("+") é chamado
    - previousValue = 5
    - operation = "+"
    - waitingForNewValue = true
-   
 3. Usuário pressiona "3"
    - handleNumberPress("3") é chamado
    - Como waitingForNewValue é true, display é resetado
    - display muda para "3"
-   
 4. Usuário pressiona "="
    - handleEqual() é chamado
    - Cálculo: 5 + 3 = 8
@@ -260,11 +277,9 @@ A aplicação deve tratar:
 1. Divisão por zero
    - Exibir "Erro" ou "Infinito"
    - Adicionar ao histórico como erro
-   
 2. Overflow numérico
    - Usar formatDisplay para abreviar
    - Mostrar notação científica se necessário
-   
 3. Falha ao salvar/carregar AsyncStorage
    - Log do erro
    - Continuar funcionando sem persistência
@@ -289,11 +304,13 @@ A aplicação deve tratar:
 ### Possíveis Otimizações Futuras
 
 1. Memoização de componentes Button
+
    ```typescript
    export default memo(Button);
    ```
 
 2. useCallback para handlers
+
    ```typescript
    const handleNumberPress = useCallback((num: string) => {...}, []);
    ```
@@ -306,8 +323,9 @@ A aplicação deve tratar:
 O código foi estruturado para ser testável:
 
 ### Unit Tests (useCalculator)
+
 ```typescript
-test('handleNumberPress concatenates numbers correctly', () => {
+test("handleNumberPress concatenates numbers correctly", () => {
   const { result } = renderHook(() => useCalculator());
   act(() => result.current.handleNumberPress("5"));
   expect(result.current.display).toBe("5");
@@ -315,8 +333,9 @@ test('handleNumberPress concatenates numbers correctly', () => {
 ```
 
 ### Integration Tests
+
 ```typescript
-test('complete calculation flow', () => {
+test("complete calculation flow", () => {
   const { result } = renderHook(() => useCalculator());
   // Série de ações que simulam cálculo
   // Verificar resultado final e histórico
@@ -324,6 +343,7 @@ test('complete calculation flow', () => {
 ```
 
 ### Component Tests
+
 ```typescript
 test('Button renders with label or icon', () => {
   const { getByText } = render(<Button label="5" onPress={() => {}} />);
@@ -334,6 +354,7 @@ test('Button renders with label or icon', () => {
 ## Conclusão
 
 A arquitetura foi projetada com foco em:
+
 - Clareza e legibilidade
 - Separação de responsabilidades
 - Facilidade de teste e manutenção

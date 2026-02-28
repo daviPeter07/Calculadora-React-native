@@ -67,8 +67,10 @@ export function useCalculator() {
   };
 
   return {
+    // State
     display,
     history,
+    // Handlers
     handleNumberPress,
     handleDecimal,
     formatDisplay,

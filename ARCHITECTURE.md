@@ -166,10 +166,11 @@ const waitingForNewValueRef = useRef<boolean>(false);
 **formatDisplay(value: number)**
 
 ```
-Formata números maiores que 1000:
-- 1000 até 1.000.000 = "XXXk" (10k, 100k, etc)
-- 1.000.000 até 1.000.000.000 = "XXXM" (1M, 100M, etc)
-- 1.000.000.000+ = "XXXB" (1B, 999B, etc)
+Adiciona separadores de milhares (pontos) ao número:
+- 1000 = "1.000"
+- 1000000 = "1.000.000"
+- 1000000000 = "1.000.000.000"
+Números menores que 1000 são exibidos normalmente
 ```
 
 **loadHistory()** (useEffect ao montar)

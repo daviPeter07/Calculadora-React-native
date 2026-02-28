@@ -26,6 +26,16 @@ export function useCalculator() {
     // Lógica dos números
   };
 
+  const handleDecimal = () => {
+    // Lógica para adicionar vírgula/ponto decimal
+  };
+
+  const formatDisplay = (value: number): string => {
+    // Lógica para formatar números (10k, 100k, 1M, 1B, etc)
+    // Retornar display formatado
+    return "";
+  };
+
   const handleOperator = (operator: string) => {
     // Lógica dos operadores
   };
@@ -48,6 +58,10 @@ export function useCalculator() {
     // Lógica para calcular raiz quadrada
   };
 
+  const handleClearHistory = () => {
+    // Lógica para limpar o histórico
+  };
+
   const handleHistory = () => {
     // Lógica para mostrar histórico
   };
@@ -56,11 +70,14 @@ export function useCalculator() {
     display,
     history,
     handleNumberPress,
+    handleDecimal,
+    formatDisplay,
     handleOperator,
     handleEqual,
     handleAC,
     handleBackspace,
     handleSquareRoot,
+    handleClearHistory,
     handleHistory,
   };
 }

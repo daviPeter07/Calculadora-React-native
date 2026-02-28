@@ -1,13 +1,20 @@
 import { Pressable, Text } from "react-native";
 import { styles } from "./index.style";
+import { ReactNode } from "react";
 
 interface ButtonProps {
-  label: string;
+  label?: string;
+  icon?: ReactNode;
   onPress: () => void;
   variant?: "default" | "operator" | "ac" | "equal";
 }
 
-export function Button({ label, onPress, variant = "default" }: ButtonProps) {
+export function Button({
+  label,
+  icon,
+  onPress,
+  variant = "default",
+}: ButtonProps) {
   //Array para variação de estilo
   const buttonStyles = [
     styles.button,
@@ -18,7 +25,7 @@ export function Button({ label, onPress, variant = "default" }: ButtonProps) {
 
   return (
     <Pressable style={buttonStyles} onPress={onPress}>
-      <Text style={styles.buttonText}>{label}</Text>
+      {icon ? icon : <Text style={styles.buttonText}>{label}</Text>}
     </Pressable>
   );
 }

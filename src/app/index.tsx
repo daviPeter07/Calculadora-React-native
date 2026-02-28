@@ -9,21 +9,28 @@ export default function Calculator() {
   const {
     display,
     handleNumberPress,
+    handleDecimal,
     handleOperator,
     handleEqual,
     handleAC,
+    handleBackspace,
+    handleSquareRoot,
     handleHistory,
   } = useCalculator();
 
   return (
     <View style={styles.container}>
-      <Header onHistoryPress={handleHistory} />
+      <Header />
       <Display value={display} />
       <ButtonGrid
         onNumberPress={handleNumberPress}
+        onDecimalPress={handleDecimal}
         onOperatorPress={handleOperator}
         onACPress={handleAC}
+        onBackspacePress={handleBackspace}
+        onSquareRootPress={handleSquareRoot}
         onEqualPress={handleEqual}
+        onHistoryPress={handleHistory}
       />
     </View>
   );

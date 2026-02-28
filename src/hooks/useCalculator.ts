@@ -1,8 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export function useCalculator() {
   const [display, setDisplay] = useState("0");
   const [history, setHistory] = useState<string[]>([]);
+
+  // Carregar histórico ao iniciar
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const loadHistory = async () => {
+    // Lógica para carregar histórico do AsyncStorage
+  };
+
+  const saveHistory = async (newHistory: string[]) => {
+    // Lógica para salvar histórico no AsyncStorage
+  };
+
+  const addToHistory = (calculation: string) => {
+    // Lógica para adicionar cálculo ao histórico
+  };
 
   const handleNumberPress = (num: string) => {
     // Lógica dos números
@@ -13,11 +31,21 @@ export function useCalculator() {
   };
 
   const handleEqual = () => {
-    // Lógica do cálculo
+    // calcular resultado
+    // adicionar ao histórico automático
+    // atualizar display
   };
 
   const handleAC = () => {
-    setDisplay("0");
+    // Lógica para limpar display
+  };
+
+  const handleBackspace = () => {
+    // Lógica para remover último dígito
+  };
+
+  const handleSquareRoot = () => {
+    // Lógica para calcular raiz quadrada
   };
 
   const handleHistory = () => {
@@ -31,6 +59,8 @@ export function useCalculator() {
     handleOperator,
     handleEqual,
     handleAC,
+    handleBackspace,
+    handleSquareRoot,
     handleHistory,
   };
 }

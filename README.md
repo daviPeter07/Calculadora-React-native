@@ -5,7 +5,7 @@ Aplicação mobile de calculadora desenvolvida com React Native e Expo, como pro
 ## Desenvolvido por
 
 - Davi Peterson Matos Conde
-- Lucas Chaves
+- José Lucas Ferreira Chaves
 
 ## Tecnologias Utilizadas
 

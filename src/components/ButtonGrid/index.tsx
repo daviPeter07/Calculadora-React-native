@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { Button } from "../Button";
 import { styles } from "./index.style";
-import { Delete, Divide, History, Radical } from "lucide-react";
+import { Delete, Divide, History, Radical } from "lucide-react-native";
 import type { ButtonGridProps } from "@/types/ButtonGrid";
 
 export function ButtonGrid({

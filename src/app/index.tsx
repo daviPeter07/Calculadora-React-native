@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { styles } from "./index.style";
+import styles from "./index.style";
 import { Header } from "@/components/Header";
 import { Display } from "@/components/Display";
 import { ButtonGrid } from "@/components/ButtonGrid";

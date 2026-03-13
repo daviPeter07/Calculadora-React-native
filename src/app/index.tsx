@@ -40,6 +40,7 @@ export default function Calculator() {
             onEqualPress={handlers.handleEqual}
             onHistoryPress={handlers.handleHistory}
             onPercentagePress={handlers.handlePercentage}
+            onParenthesesPress={handlers.handleParentheses}
           />
         </View>
       </SafeAreaView>

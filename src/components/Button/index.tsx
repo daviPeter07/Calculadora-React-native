@@ -21,7 +21,11 @@ export function Button({
           : theme.buttonDefault;
 
   const textColor =
-    variant === "equal" ? theme.buttonEqualText : theme.buttonDefaultText;
+    variant === "equal"
+      ? theme.buttonEqualText
+      : variant === "operator" || variant === "ac"
+        ? theme.buttonOperatorText
+        : theme.buttonDefaultText;
 
   return (
     <Pressable

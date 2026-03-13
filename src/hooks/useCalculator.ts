@@ -1,271 +1,243 @@
-import { useState, useEffect, useRef } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState } from "react";
+import { evaluate, countOpenParens } from "@/utils/evaluate";
+import {
+  isOperator,
+  formatNumber,
+  resultToRaw,
+  formatExpression,
+  getLastNumber,
+} from "@/utils/formatter";
+import { useHistory } from "./useHistory";
 
-const HISTORY_KEY = "calculator_history";
-
-const parseDisplay = (value: string): number => {
-  if (value === "Erro") return 0;
-  const parts = value.split(",");
-  const intPart = parts[0].replace(/\./g, "") || "0";
-  const decPart = parts[1] || "";
-  const cleaned = decPart ? `${intPart}.${decPart}` : intPart;
-  return parseFloat(cleaned) || 0;
-};
-
-const formatDisplayForInput = (display: string): string => {
-  if (display === "" || display === "Erro") return display;
-  const isNegative = display.startsWith("-");
-  const hasTrailingComma = display.endsWith(",");
-  const parts = display.split(",");
-  const intPart =
-    (parts[0] || "0").replace(/\./g, "").replace(/\D/g, "") || "0";
-  const decPart = parts[1] ? parts[1].replace(/\D/g, "") : "";
-  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  let result = decPart ? `${formattedInt},${decPart}` : formattedInt;
-  if (hasTrailingComma && !decPart) result += ",";
-  if (isNegative && intPart !== "0") result = "-" + result;
-  return result;
-};
-
-const getOpSymbol = (op: string) => (op === "*" ? "×" : op === "/" ? "÷" : op);
-
-export function useCalculator() {
-  const [display, setDisplay] = useState("");
+// Hook principal que orquestra a lógica da calculadora baseada em expressão
+export const useCalculator = () => {
   const [expression, setExpression] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [resultValue, setResultValue] = useState<string | null>(null);
 
-  const previousValueRef = useRef<number | null>(null);
-  const operationRef = useRef<string | null>(null);
-  const waitingForNewValueRef = useRef(false);
+  const {
+    history,
+    showHistory,
+    addToHistory,
+    handleClearHistory,
+    handleHistory,
+    handleCloseHistory,
+  } = useHistory();
 
-  const [waitingForNewValue, setWaitingForNewValue] = useState(false);
+  // Exibe o resultado formatado ou a expressão em construção
+  const display =
+    resultValue !== null ? resultValue : formatExpression(expression) || "";
 
-  const displayValue =
-    expression !== ""
-      ? expression + (waitingForNewValue ? "" : formatDisplayForInput(display))
-      : formatDisplayForInput(display);
-
-  useEffect(() => {
-    loadHistory();
-  }, []);
-
-  const loadHistory = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(HISTORY_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as string[];
-        setHistory(Array.isArray(parsed) ? parsed : []);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar histórico:", error);
-    }
-  };
-
-  const saveHistory = async (newHistory: string[]) => {
-    try {
-      await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
-    } catch (error) {
-      console.error("Erro ao salvar histórico:", error);
-    }
-  };
-
-  const addToHistory = (calculation: string) => {
-    setHistory((prev) => {
-      const next = [calculation, ...prev].slice(0, 50);
-      saveHistory(next);
-      return next;
-    });
-  };
-
-  const formatDisplay = (value: number): string => {
-    if (!Number.isFinite(value)) return "Erro";
-    if (Math.abs(value) >= 1e15) return value.toExponential(2);
-    const [intPart, decPart] = value.toString().split(".");
-    const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return decPart ? `${formatted},${decPart}` : formatted;
-  };
-
+  // Insere um dígito na expressão, tratando zeros à esquerda e pós-resultado
   const handleNumberPress = (num: string) => {
-    setDisplay((prev) => {
-      if (prev === "Erro" || waitingForNewValueRef.current) {
-        waitingForNewValueRef.current = false;
-        setWaitingForNewValue(false);
-        return num === "0" ? "" : num;
+    if (resultValue !== null) {
+      setResultValue(null);
+      setExpression(num === "0" ? "0" : num);
+      return;
+    }
+
+    setExpression((prev) => {
+      if (prev === "" || prev === "0") {
+        return num === "0" ? "0" : num;
       }
-      if ((prev === "" || prev === "0") && num === "0") return prev || "";
-      if ((prev === "" || prev === "0") && num !== "0") return num;
+
+      const lastChar = prev[prev.length - 1];
+
+      if (lastChar === ")") return prev;
+
+      if (lastChar === "0") {
+        const beforeZero = prev.length >= 2 ? prev[prev.length - 2] : "";
+        if (isOperator(beforeZero) || beforeZero === "(" || prev.length === 1) {
+          if (num === "0") return prev;
+          return prev.slice(0, -1) + num;
+        }
+      }
+
       return prev + num;
     });
   };
 
+  // Insere separador decimal, evitando duplicatas no mesmo número
   const handleDecimal = () => {
-    setDisplay((prev) => {
-      if (prev === "Erro" || waitingForNewValueRef.current) {
-        waitingForNewValueRef.current = false;
-        setWaitingForNewValue(false);
-        return "0,";
-      }
-      if (prev === "") return "0,";
-      if (prev.includes(",")) return prev;
-      return prev + ",";
+    if (resultValue !== null) {
+      setResultValue(null);
+      setExpression("0.");
+      return;
+    }
+
+    setExpression((prev) => {
+      const lastNum = getLastNumber(prev);
+      if (lastNum.includes(".")) return prev;
+
+      if (prev === "") return "0.";
+
+      const lastChar = prev[prev.length - 1];
+      if (isOperator(lastChar) || lastChar === "(") return prev + "0.";
+      if (lastChar === ")") return prev;
+
+      return prev + ".";
     });
   };
 
+  // Adiciona operador à expressão, substituindo o anterior se necessário
   const handleOperator = (operator: string) => {
-    const current = parseDisplay(display || "0");
+    const symbol = operator === "*" ? "×" : operator === "/" ? "÷" : operator;
 
-    if (previousValueRef.current === null) {
-      previousValueRef.current = current;
-      operationRef.current = operator;
-      waitingForNewValueRef.current = true;
-      setWaitingForNewValue(true);
-      setExpression(formatDisplay(current) + " " + getOpSymbol(operator) + " ");
+    if (resultValue !== null) {
+      const raw = resultToRaw(resultValue);
+      setExpression(raw + symbol);
+      setResultValue(null);
       return;
     }
 
-    if (!waitingForNewValueRef.current && operationRef.current) {
-      const result = calculate(
-        previousValueRef.current,
-        current,
-        operationRef.current
-      );
-      const formatted = formatDisplay(result);
-      setDisplay(formatted);
-      previousValueRef.current = result;
+    if (expression === "") return;
+
+    const lastChar = expression[expression.length - 1];
+
+    if (isOperator(lastChar)) {
+      setExpression((prev) => prev.slice(0, -1) + symbol);
+      return;
     }
 
-    operationRef.current = operator;
-    waitingForNewValueRef.current = true;
-    setWaitingForNewValue(true);
-    setExpression(
-      formatDisplay(previousValueRef.current!) +
-        " " +
-        getOpSymbol(operator) +
-        " "
-    );
-  };
-
-  const calculate = (a: number, b: number, op: string): number => {
-    switch (op) {
-      case "+":
-        return a + b;
-      case "-":
-        return a - b;
-      case "*":
-      case "×":
-        return a * b;
-      case "/":
-      case "÷":
-        return b === 0 ? Infinity : a / b;
-      default:
-        return b;
+    if (lastChar === "(") {
+      if (symbol === "-") {
+        setExpression((prev) => prev + symbol);
+      }
+      return;
     }
+
+    setExpression((prev) => prev + symbol);
   };
 
+  // Avalia a expressão completa e exibe o resultado
   const handleEqual = () => {
-    if (previousValueRef.current === null || operationRef.current === null)
+    if (expression === "" && resultValue === null) return;
+
+    const exprToEval =
+      resultValue !== null ? resultToRaw(resultValue) : expression;
+
+    try {
+      const result = evaluate(exprToEval);
+      const formatted = formatNumber(result);
+      const displayExpr = formatExpression(exprToEval);
+      addToHistory(`${displayExpr} = ${formatted}`);
+      setResultValue(formatted);
+      setExpression("");
+    } catch {
+      setResultValue("Erro");
+      setExpression("");
+    }
+  };
+
+  // Limpa toda a expressão e o resultado (reset completo)
+  const handleAC = () => {
+    setExpression("");
+    setResultValue(null);
+  };
+
+  // Remove o último caractere da expressão ou converte resultado em expressão editável
+  const handleBackspace = () => {
+    if (resultValue !== null) {
+      const raw = resultToRaw(resultValue);
+      if (raw.length <= 1 || (raw.startsWith("-") && raw.length <= 2)) {
+        setResultValue(null);
+        setExpression("");
+      } else {
+        setResultValue(null);
+        setExpression(raw.slice(0, -1));
+      }
       return;
-
-    const current = parseDisplay(display);
-    const result = calculate(
-      previousValueRef.current,
-      current,
-      operationRef.current
-    );
-    const prevFormatted = formatDisplay(previousValueRef.current);
-    const currFormatted = formatDisplay(current);
-    const opSymbol =
-      operationRef.current === "*"
-        ? "×"
-        : operationRef.current === "/"
-          ? "÷"
-          : operationRef.current;
-
-    let historyEntry: string;
-    if (!Number.isFinite(result)) {
-      historyEntry = `${prevFormatted} ${opSymbol} ${currFormatted} = Erro`;
-      setDisplay("Erro");
-    } else {
-      const resultFormatted = formatDisplay(result);
-      historyEntry = `${prevFormatted} ${opSymbol} ${currFormatted} = ${resultFormatted}`;
-      setDisplay(resultFormatted);
     }
 
-    addToHistory(historyEntry);
-    previousValueRef.current = null;
-    operationRef.current = null;
-    waitingForNewValueRef.current = false;
-    setWaitingForNewValue(false);
-    setExpression("");
+    setExpression((prev) => {
+      if (prev.length <= 1) return "";
+      return prev.slice(0, -1);
+    });
   };
 
-  const handleAC = () => {
-    setDisplay("");
-    setExpression("");
-    previousValueRef.current = null;
-    operationRef.current = null;
-    waitingForNewValueRef.current = false;
-    setWaitingForNewValue(false);
+  // Insere "(" ou ")" de forma inteligente baseado no contexto da expressão
+  const handleParentheses = () => {
+    if (resultValue !== null) {
+      const raw = resultToRaw(resultValue);
+      setResultValue(null);
+      setExpression(raw + "×(");
+      return;
+    }
+
+    const open = countOpenParens(expression);
+    const lastChar = expression[expression.length - 1] || "";
+
+    if (expression === "" || isOperator(lastChar) || lastChar === "(") {
+      setExpression((prev) => prev + "(");
+    } else if (
+      open > 0 &&
+      ((lastChar >= "0" && lastChar <= "9") ||
+        lastChar === ")" ||
+        lastChar === ".")
+    ) {
+      setExpression((prev) => prev + ")");
+    } else {
+      setExpression((prev) => prev + "×(");
+    }
   };
 
-  const handleBackspace = () => {
-    if (expression !== "" && previousValueRef.current !== null) {
-      if (waitingForNewValueRef.current || display === "" || display === "0") {
-        setExpression("");
-        setDisplay(formatDisplay(previousValueRef.current));
-        previousValueRef.current = null;
-        operationRef.current = null;
-        waitingForNewValueRef.current = false;
-        setWaitingForNewValue(false);
+  // Divide o último número da expressão por 100
+  const handlePercentage = () => {
+    if (resultValue !== null) {
+      const raw = resultToRaw(resultValue);
+      const val = parseFloat(raw) / 100;
+      setResultValue(formatNumber(val));
+      return;
+    }
+
+    const match = expression.match(/(\d+\.?\d*)$/);
+    if (match) {
+      const lastNum = match[1];
+      const val = parseFloat(lastNum) / 100;
+      setExpression(
+        (prev) => prev.slice(0, prev.length - lastNum.length) + val.toString()
+      );
+    }
+  };
+
+  // Calcula a raiz quadrada do resultado atual ou da expressão avaliada
+  const handleSquareRoot = () => {
+    if (resultValue !== null) {
+      const raw = resultToRaw(resultValue);
+      const val = parseFloat(raw);
+      if (val < 0) {
+        setResultValue("Erro");
+        addToHistory(`√(${resultValue}) = Erro`);
         return;
       }
-    }
-
-    setDisplay((prev) => {
-      if (prev === "Erro") return "";
-      if (prev.length <= 1) {
-        return expression !== "" ? "" : "";
-      }
-      const next = prev.slice(0, -1);
-      return next === "-" || next === "" ? "" : next;
-    });
-  };
-
-  const handleSquareRoot = () => {
-    const current = parseDisplay(display);
-    if (current < 0) {
-      setDisplay("Erro");
-      addToHistory(`√(${display}) = Erro`);
+      const result = Math.sqrt(val);
+      const formatted = formatNumber(result);
+      addToHistory(`√(${resultValue}) = ${formatted}`);
+      setResultValue(formatted);
       return;
     }
-    const result = Math.sqrt(current);
-    const formatted = formatDisplay(result);
-    setDisplay(formatted);
-    addToHistory(`√(${display}) = ${formatted}`);
-  };
 
-  const handlePercentage = () => {
-    const current = parseDisplay(display);
-    const result = current / 100;
-    setDisplay(formatDisplay(result));
-  };
-
-  const handleClearHistory = () => {
-    setHistory([]);
-    saveHistory([]);
-  };
-
-  const handleHistory = () => {
-    setShowHistory((prev) => !prev);
-  };
-
-  const handleCloseHistory = () => {
-    setShowHistory(false);
+    const displayExpr = formatExpression(expression);
+    try {
+      const val = evaluate(expression);
+      if (val < 0) {
+        setResultValue("Erro");
+        addToHistory(`√(${displayExpr}) = Erro`);
+        setExpression("");
+        return;
+      }
+      const result = Math.sqrt(val);
+      const formatted = formatNumber(result);
+      addToHistory(`√(${displayExpr}) = ${formatted}`);
+      setResultValue(formatted);
+      setExpression("");
+    } catch {
+      setResultValue("Erro");
+      setExpression("");
+    }
   };
 
   return {
-    display: displayValue,
+    display,
     history,
     showHistory,
     handleNumberPress,
@@ -276,8 +248,9 @@ export function useCalculator() {
     handleBackspace,
     handleSquareRoot,
     handlePercentage,
+    handleParentheses,
     handleClearHistory,
     handleHistory,
     handleCloseHistory,
   };
-}
+};

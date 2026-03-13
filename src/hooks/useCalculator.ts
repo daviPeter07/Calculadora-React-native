@@ -12,14 +12,24 @@ const parseDisplay = (value: string): number => {
   return parseFloat(cleaned) || 0;
 };
 
+const getOpSymbol = (op: string) => (op === "*" ? "×" : op === "/" ? "÷" : op);
+
 export function useCalculator() {
-  const [display, setDisplay] = useState("0");
+  const [display, setDisplay] = useState("");
+  const [expression, setExpression] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
   const previousValueRef = useRef<number | null>(null);
   const operationRef = useRef<string | null>(null);
   const waitingForNewValueRef = useRef(false);
+
+  const [waitingForNewValue, setWaitingForNewValue] = useState(false);
+
+  const displayValue =
+    expression !== ""
+      ? expression + (waitingForNewValue ? "" : display)
+      : display;
 
   useEffect(() => {
     loadHistory();
@@ -65,10 +75,11 @@ export function useCalculator() {
     setDisplay((prev) => {
       if (prev === "Erro" || waitingForNewValueRef.current) {
         waitingForNewValueRef.current = false;
-        return num === "0" ? "0" : num;
+        setWaitingForNewValue(false);
+        return num === "0" ? "" : num;
       }
-      if (prev === "0" && num === "0") return prev;
-      if (prev === "0" && num !== "0") return num;
+      if ((prev === "" || prev === "0") && num === "0") return prev || "";
+      if ((prev === "" || prev === "0") && num !== "0") return num;
       return prev + num;
     });
   };
@@ -77,20 +88,26 @@ export function useCalculator() {
     setDisplay((prev) => {
       if (prev === "Erro" || waitingForNewValueRef.current) {
         waitingForNewValueRef.current = false;
+        setWaitingForNewValue(false);
         return "0,";
       }
+      if (prev === "") return "0,";
       if (prev.includes(",")) return prev;
       return prev + ",";
     });
   };
 
   const handleOperator = (operator: string) => {
-    const current = parseDisplay(display);
+    const current = parseDisplay(display || "0");
 
     if (previousValueRef.current === null) {
       previousValueRef.current = current;
       operationRef.current = operator;
       waitingForNewValueRef.current = true;
+      setWaitingForNewValue(true);
+      setExpression(
+        formatDisplay(current) + " " + getOpSymbol(operator) + " "
+      );
       return;
     }
 
@@ -107,6 +124,13 @@ export function useCalculator() {
 
     operationRef.current = operator;
     waitingForNewValueRef.current = true;
+    setWaitingForNewValue(true);
+    setExpression(
+      formatDisplay(previousValueRef.current!) +
+        " " +
+        getOpSymbol(operator) +
+        " "
+    );
   };
 
   const calculate = (a: number, b: number, op: string): number => {
@@ -159,20 +183,39 @@ export function useCalculator() {
     previousValueRef.current = null;
     operationRef.current = null;
     waitingForNewValueRef.current = false;
+    setWaitingForNewValue(false);
+    setExpression("");
   };
 
   const handleAC = () => {
-    setDisplay("0");
+    setDisplay("");
+    setExpression("");
     previousValueRef.current = null;
     operationRef.current = null;
     waitingForNewValueRef.current = false;
+    setWaitingForNewValue(false);
   };
 
   const handleBackspace = () => {
+    if (expression !== "" && previousValueRef.current !== null) {
+      if (waitingForNewValueRef.current || display === "" || display === "0") {
+        setExpression("");
+        setDisplay(formatDisplay(previousValueRef.current));
+        previousValueRef.current = null;
+        operationRef.current = null;
+        waitingForNewValueRef.current = false;
+        setWaitingForNewValue(false);
+        return;
+      }
+    }
+
     setDisplay((prev) => {
-      if (prev.length <= 1) return "0";
+      if (prev === "Erro") return "";
+      if (prev.length <= 1) {
+        return expression !== "" ? "" : "";
+      }
       const next = prev.slice(0, -1);
-      return next === "-" || next === "" ? "0" : next;
+      return next === "-" || next === "" ? "" : next;
     });
   };
 
@@ -209,7 +252,7 @@ export function useCalculator() {
   };
 
   return {
-    display,
+    display: displayValue,
     history,
     showHistory,
     handleNumberPress,

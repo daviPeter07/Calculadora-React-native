@@ -13,4 +13,8 @@ export const styles = StyleSheet.create({
     fontSize: 64,
     fontWeight: "300",
   },
+  cursor: {
+    position: "absolute",
+    right: 0,
+  },
 });

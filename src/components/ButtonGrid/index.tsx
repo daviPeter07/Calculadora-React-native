@@ -73,7 +73,7 @@ export function ButtonGrid({
         <Button label="0" onPress={() => onNumberPress("0")} />
         <Button label="," onPress={onDecimalPress} />
         <Button
-          icon={<Delete size={24} color={iconColor} />}
+          icon={<Delete size={28} color={iconColor} />}
           onPress={onBackspacePress}
         />
         <Button label="=" onPress={onEqualPress} variant="equal" />

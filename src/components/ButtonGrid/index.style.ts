@@ -1,17 +1,18 @@
 import { StyleSheet } from "react-native";
 
-const GAP = 16;
-
 export const styles = StyleSheet.create({
   buttonsContainer: {
+    width: "100%",
     paddingBottom: 40,
     paddingTop: 8,
-    gap: GAP,
+    gap: 16,
+    alignItems: "center",
   },
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    gap: GAP,
+    gap: 16,
+    width: "100%",
   },
 });

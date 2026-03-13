@@ -1,7 +1,6 @@
 import { StyleSheet } from "react-native";
 
-const BUTTON_SIZE = 72;
-const GAP = 16;
+const BUTTON_SIZE = 88;
 
 export const styles = StyleSheet.create({
   button: {
@@ -12,7 +11,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
-    fontSize: 28,
-    fontWeight: "400",
+    fontSize: 32,
+    fontWeight: "600",
   },
 });

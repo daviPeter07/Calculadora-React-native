@@ -4,7 +4,9 @@ export interface ButtonGridProps {
   onOperatorPress: (operator: string) => void;
   onACPress: () => void;
   onBackspacePress: () => void;
-  onSquareRootPress: () => void;
+  onSquareRootPress?: () => void;
   onEqualPress: () => void;
-  onHistoryPress: () => void;
+  onHistoryPress?: () => void;
+  onParenthesesPress?: () => void;
+  onPercentagePress?: () => void;
 }

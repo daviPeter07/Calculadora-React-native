@@ -3,14 +3,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
 import styles from "./index.style";
-import { ThemeProvider, useTheme } from "@/theme/ThemeContext";
+import { useTheme } from "@/theme/ThemeContext";
 import { Header } from "@/components/Header";
+import { HistorySection } from "@/components/HistorySection";
 import { Display } from "@/components/Display";
 import { ButtonGrid } from "@/components/ButtonGrid";
 import { useCalculator } from "@/hooks/useCalculator";
 
-function CalculatorContent() {
-  const { display, ...handlers } = useCalculator();
+export default function Calculator() {
+  const { display, history, ...handlers } = useCalculator();
   const theme = useTheme();
   const colorScheme = useColorScheme();
 
@@ -23,6 +24,10 @@ function CalculatorContent() {
       >
         <View style={styles.container}>
           <Header onHistoryPress={handlers.handleHistory} />
+          <HistorySection
+            history={history}
+            onClearHistory={handlers.handleClearHistory}
+          />
           <Display value={display} />
           <ButtonGrid
             onNumberPress={handlers.handleNumberPress}
@@ -33,17 +38,10 @@ function CalculatorContent() {
             onSquareRootPress={handlers.handleSquareRoot}
             onEqualPress={handlers.handleEqual}
             onHistoryPress={handlers.handleHistory}
+            onPercentagePress={handlers.handlePercentage}
           />
         </View>
       </SafeAreaView>
     </>
-  );
-}
-
-export default function Calculator() {
-  return (
-    <ThemeProvider>
-      <CalculatorContent />
-    </ThemeProvider>
   );
 }

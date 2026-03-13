@@ -2,362 +2,191 @@
 
 ## Visão Geral
 
-A aplicação segue um padrão de arquitetura em camadas, separando responsabilidades em:
+Calculadora baseada em expressão (estilo Motorola) construída com React Native + Expo Router. A aplicação segue um padrão de arquitetura em camadas:
 
-- Camada de Apresentação (UI Components)
-- Camada de Lógica de Negócio (Custom Hooks)
-- Camada de Tipos (Type Definitions)
-- Camada de Dados (AsyncStorage)
+- **Apresentação** — Componentes de UI (Button, Display, Header, etc.)
+- **Lógica de Negócio** — Custom Hooks (useCalculator, useHistory)
+- **Utilitários** — Funções puras (evaluate, formatter)
+- **Tipos** — Definições de tipos centralizadas
+- **Persistência** — AsyncStorage para histórico
+- **Tema** — Context API para light/dark/system
+
+## Estrutura de Pastas
+
+```
+src/
+├── app/
+│   ├── _layout.tsx              # Layout raiz com ThemeProvider
+│   ├── index.tsx                # Tela principal (Calculator)
+│   └── index.style.ts
+├── components/
+│   ├── Button/                  # Botão individual (agnóstico de domínio)
+│   ├── ButtonGrid/              # Grid 5x4 dos botões da calculadora
+│   ├── Display/                 # Display com font dinâmico e cursor animado
+│   ├── Header/                  # Barra superior (histórico + menu de tema)
+│   ├── HistorySection/          # Painel colapsável de histórico
+│   └── OptionsMenu/             # Modal de seleção de tema
+├── hooks/
+│   ├── useCalculator.ts         # Orquestra input, expressão e resultado
+│   └── useHistory.ts            # Persistência e gerenciamento do histórico
+├── utils/
+│   ├── evaluate.ts              # Parser e avaliador de expressões matemáticas
+│   └── formatter.ts             # Formatação de números e expressões (pt-BR)
+├── theme/
+│   ├── ThemeContext.tsx          # Provider e hooks de tema (light/dark/system)
+│   └── colors.ts                # Paletas de cores (lightTheme, darkTheme)
+└── types/
+    ├── Button.ts                # ButtonProps
+    ├── ButtonGrid.ts            # ButtonGridProps
+    └── Evaluate.ts              # ParseState (usado pelo avaliador)
+```
 
 ## Fluxo de Dados
 
 ```
 Usuário pressiona botão
-        |
+        │
         v
-Button Component
-        |
+ButtonGrid → chama handler correspondente
+        │
         v
-Handler Function (ex: handleNumberPress)
-        |
+useCalculator → atualiza expression/resultValue
+        │
         v
-useCalculator Hook (atualiza estado)
-        |
+formatter → formata expressão para exibição (pt-BR)
+        │
         v
-Display Component atualiza
-        |
+Display → renderiza com font dinâmico + cursor
+        │
         v
-Histórico persiste em AsyncStorage
+useHistory → persiste cálculos no AsyncStorage
 ```
 
-## Detalhamento de Cada Camada
+## Camada de Lógica de Negócio
 
-### 1. Camada de Apresentação (src/components/)
+### useCalculator (src/hooks/useCalculator.ts)
 
-#### Button Component
+Hook principal que orquestra a calculadora. Consome `useHistory` e funções de `formatter` e `evaluate`.
 
-- Componente agnóstico de domínio
-- Responsável apenas por renderizar UI
-- Aceita props `onPress` para ações
-- Não contém lógica de negócio
+**Estado:**
 
-```typescript
-interface ButtonProps {
-  label?: string;
-  icon?: ReactNode;
-  onPress: () => void;
-  variant?: "default" | "operator" | "ac" | "equal";
-}
-```
+- `expression` — expressão raw sendo construída (ex: `"12+34×5"`)
+- `resultValue` — resultado formatado após pressionar "=" (ex: `"182"`)
+- `display` — valor derivado: mostra `resultValue` ou `formatExpression(expression)`
 
-#### ButtonGrid Component
+**Handlers:**
 
-- Compõe múltiplos Button components
-- Organiza layout da calculadora
-- Passa handlers do hook para os botões
-- Define a estrutura visual do teclado
+| Handler             | Descrição                                                           |
+| ------------------- | ------------------------------------------------------------------- |
+| `handleNumberPress` | Insere dígito, trata zeros à esquerda e estado pós-resultado        |
+| `handleDecimal`     | Insere vírgula decimal, evita duplicatas no mesmo número            |
+| `handleOperator`    | Adiciona operador (+, -, ×, ÷), substitui anterior se repetido      |
+| `handleEqual`       | Avalia a expressão completa via `evaluate()` e salva no histórico   |
+| `handleAC`          | Reset completo (expressão + resultado)                              |
+| `handleBackspace`   | Remove último caractere ou converte resultado em expressão editável |
+| `handleParentheses` | Insere `(` ou `)` de forma inteligente baseado no contexto          |
+| `handlePercentage`  | Divide o último número da expressão por 100                         |
+| `handleSquareRoot`  | Calcula raiz quadrada do resultado ou da expressão avaliada         |
 
-#### Display Component
+### useHistory (src/hooks/useHistory.ts)
 
-- Apresenta valor numérico ao usuário
-- Recebe valor via prop
-- Sem lógica de cálculo
+Hook responsável pela persistência e UI do histórico.
 
-#### Header, HistoryButton
+- Carrega do AsyncStorage ao montar
+- Salva automaticamente a cada novo cálculo
+- Máximo de 50 itens (FIFO)
+- Controla visibilidade do painel
 
-- Componentes auxiliares
-- Complementam a interface
+## Camada de Utilitários
 
-### 2. Camada de Lógica de Negócio (src/hooks/useCalculator.ts)
+### evaluate.ts — Avaliador de Expressões
 
-Este é o componente mais importante da aplicação. Centraliza toda a lógica.
-
-#### Estado Principal
-
-```typescript
-const [display, setDisplay] = useState<string>("0");
-const [history, setHistory] = useState<string[]>([]);
-```
-
-#### Estado Interno (necessário para implementação)
-
-Para funcionar corretamente, o hook precisará gerenciar:
-
-```typescript
-// Estes precisam ser adicionados:
-const previousValueRef = useRef<number | null>(null);
-const operationRef = useRef<string | null>(null);
-const waitingForNewValueRef = useRef<boolean>(false);
-```
-
-#### Handlers Explicados
-
-**handleNumberPress(num: string)**
+Usa **recursive descent parsing** com precedência de operadores:
 
 ```
-1. Se waitingForNewValue estiver true, limpa display
-2. Se num === "0" e display === "0", não adiciona
-3. Caso contrário, concatena num ao display
-4. Seta waitingForNewValue para false
+parseExpression → resolve + e - (menor precedência)
+  └── parseTerm → resolve × e ÷ (maior precedência)
+       └── parseFactor → resolve números, parênteses e sinais unários
+            └── parseNumber → lê dígitos e ponto decimal
 ```
 
-**handleOperator(operator: string)**
+Antes de avaliar, `prepareForEval` remove operadores soltos do final e fecha parênteses abertos automaticamente.
 
-```
-1. Se previousValue estiver null, guarda valor atual em previousValue
-2. Guarda operator em operationRef
-3. Seta waitingForNewValue para true
-4. Está pronto para receber novo número
-```
+### formatter.ts — Formatação pt-BR
 
-**handleEqual()**
+| Função             | Descrição                                                    |
+| ------------------ | ------------------------------------------------------------ |
+| `formatNumber`     | Número → display pt-BR (`1000` → `"1.000"`, `0.5` → `"0,5"`) |
+| `resultToRaw`      | Display pt-BR → número raw (`"1.000,5"` → `"1000.5"`)        |
+| `formatExpression` | Expressão raw → display (`"12+34×5"` → `"12 + 34 × 5"`)      |
+| `getLastNumber`    | Extrai o último segmento numérico da expressão               |
+| `isOperator`       | Verifica se um caractere é operador (+, -, ×, ÷)             |
 
-```
-1. Se previousValue e operation existem:
-   a. Converte display para número
-   b. Realiza cálculo baseado em operation
-   c. Formata resultado
-   d. Atualiza display
-   e. Adiciona cálculo ao histórico
-   f. Reseta estado
-```
+## Camada de Apresentação
 
-**handleAC()**
+### Button
 
-```
-1. Reseta display para "0"
-2. Limpa previousValue
-3. Limpa operation
-4. Seta waitingForNewValue para false
-```
+- Componente agnóstico — aceita `label`, `icon`, `variant` e `onPress`
+- Variantes: `default`, `operator`, `ac`, `equal`
+- Cada variante usa cores específicas do tema
 
-**handleBackspace()**
+### ButtonGrid
 
-```
-1. Se display.length === 1, seta display para "0"
-2. Caso contrário, remove último caractere
-```
+- Grid 5×4: AC, ( ), %, ÷ | 7, 8, 9, × | 4, 5, 6, - | 1, 2, 3, + | 0, vírgula, backspace, =
+- Delega todas as ações via props para o hook
 
-**handleDecimal()**
+### Display
 
-```
-1. Se já há ponto no display, não faz nada
-2. Caso contrário, adiciona ponto ao final
-```
+- Font dinâmico: 64px (≤6 chars) → 24px (≥18 chars)
+- Cursor animado piscante (530ms)
+- Scroll horizontal para expressões longas
 
-**handleSquareRoot()**
+### Header
 
-```
-1. Converte display para número
-2. Calcula Math.sqrt()
-3. Formata resultado
-4. Atualiza display
-5. Adiciona operação ao histórico
-```
+- Botão de histórico (RotateCcw) + menu de opções (MoreVertical)
+- Renderiza o OptionsMenu (modal de seleção de tema)
 
-**handleClearHistory()**
+### HistorySection
 
-```
-1. Limpa array history
-2. Remove dados do AsyncStorage
-3. Executa saveHistory([])
-```
+- Painel colapsável com altura máxima de 160px
+- FlatList scrollável + botão de limpar (Trash2)
+- Estado vazio com mensagem informativa
 
-**formatDisplay(value: number)**
+## Sistema de Temas
 
-```
-Adiciona separadores de milhares (pontos) ao número:
-- 1000 = "1.000"
-- 1000000 = "1.000.000"
-- 1000000000 = "1.000.000.000"
-Números menores que 1000 são exibidos normalmente
-```
+Três modos: **Claro**, **Escuro** e **Sistema** (padrão).
 
-**loadHistory()** (useEffect ao montar)
+- `ThemeProvider` detecta preferência do sistema via `useColorScheme()`
+- `useTheme()` retorna o objeto de cores atual
+- `useThemeSettings()` retorna `themeMode` e `setThemeMode`
+- Cada tema define cores para: background, display, botões (default, operator, ac, equal) e backspace
 
-```
-1. Carrega dados do AsyncStorage com chave "calculator_history"
-2. Se encontrar, parseia JSON e atualiza history
-3. Se erro, loga erro
-```
+## Fluxo de Cálculo — Exemplo: `12 + 34 × 5 =`
 
-**saveHistory(newHistory: string[])**
-
-```
-1. Serializa history como JSON
-2. Salva em AsyncStorage com chave "calculator_history"
-3. Se erro, loga erro
-```
-
-**addToHistory(calculation: string)**
-
-```
-1. Cria novo array com calculation adicionado
-2. Atualiza history com setHistory
-3. Chama saveHistory para persistir
-```
-
-### 3. Camada de Tipos (src/types/)
-
-#### ButtonProps
-
-Define a interface para o componente Button com propriedades opcionais.
-
-#### ButtonGridProps
-
-Define a interface para o componente ButtonGrid com 8 handlers necessários.
-
-### 4. Camada de Persistência
-
-Utiliza AsyncStorage para guardar o histórico:
-
-- Chave: "calculator_history"
-- Valor: Array de strings em formato JSON
-- Carregado ao inicializar o componente
-- Atualizado toda vez que um cálculo é realizado
-
-## Padrões de Design Utilizados
-
-### 1. Container/Presentational Pattern
-
-```
-Componentes Presentacionais: Button, Display
-Componentes Container: App (usa useCalculator)
-```
-
-### 2. Custom Hook Pattern
-
-```
-useCalculator encapsula toda lógica
-App apenas renderiza e passa props
-```
-
-### 3. Refs para Valores Mutáveis
-
-```
-previousValue, operation, waitingForNewValue
-Não causam re-renders
-Mantém estado sem atualizar UI desnecessariamente
-```
-
-### 4. Composite Pattern
-
-```
-Button é composto por label ou icon
-ButtonGrid é composto por múltiplos Buttons
-```
-
-## Fluxo de um Cálculo Passo a Passo
-
-### Exemplo: 5 + 3 =
-
-1. Usuário pressiona "5"
-   - handleNumberPress("5") é chamado
-   - display muda para "5"
-2. Usuário pressiona "+"
-   - handleOperator("+") é chamado
-   - previousValue = 5
-   - operation = "+"
-   - waitingForNewValue = true
-3. Usuário pressiona "3"
-   - handleNumberPress("3") é chamado
-   - Como waitingForNewValue é true, display é resetado
-   - display muda para "3"
-4. Usuário pressiona "="
-   - handleEqual() é chamado
-   - Cálculo: 5 + 3 = 8
-   - display muda para "8"
-   - addToHistory("5 + 3 = 8") é chamado
-   - Histórico é salvo em AsyncStorage
-   - Estados são resetados
+1. Digita `1`, `2` → expression: `"12"`
+2. Pressiona `+` → expression: `"12+"`
+3. Digita `3`, `4` → expression: `"12+34"`
+4. Pressiona `×` → expression: `"12+34×"`
+5. Digita `5` → expression: `"12+34×5"`
+6. Display mostra: `"12 + 34 × 5"`
+7. Pressiona `=`:
+   - `evaluate("12+34*5")` → parseia com precedência → 12 + (34 × 5) = **182**
+   - Histórico: `"12 + 34 × 5 = 182"`
+   - Display mostra: `"182"`
+8. Pressionar número inicia nova expressão; pressionar operador continua do resultado
 
 ## Tratamento de Erros
 
-A aplicação deve tratar:
+- **Divisão por zero** → exibe "Erro" e salva no histórico
+- **Raiz de negativo** → exibe "Erro" e salva no histórico
+- **Overflow numérico** → notação científica (ex: `1.5e+15`)
+- **Falha no AsyncStorage** → log de erro, app continua funcionando
+- **Expressão incompleta** → operadores soltos são removidos, parênteses são fechados automaticamente
 
-1. Divisão por zero
-   - Exibir "Erro" ou "Infinito"
-   - Adicionar ao histórico como erro
-2. Overflow numérico
-   - Usar formatDisplay para abreviar
-   - Mostrar notação científica se necessário
-3. Falha ao salvar/carregar AsyncStorage
-   - Log do erro
-   - Continuar funcionando sem persistência
-   - Notificar usuário (opcional)
+## Padrões de Design
 
-## Performance
-
-### Otimizações Implementadas
-
-1. Refs para valores não-renderizados
-   - previousValue usa useRef, não useState
-   - Evita re-renders desnecessários
-
-2. Custom Hook reutilizável
-   - Lógica centralizada
-   - Fácil de testar isoladamente
-
-3. Path aliases
-   - Cachear do bundler otimizado
-   - Bundle menor
-
-### Possíveis Otimizações Futuras
-
-1. Memoização de componentes Button
-
-   ```typescript
-   export default memo(Button);
-   ```
-
-2. useCallback para handlers
-
-   ```typescript
-   const handleNumberPress = useCallback((num: string) => {...}, []);
-   ```
-
-3. Lazy loading de screens
-   - Histórico carregado sob demanda
-
-## Testabilidade
-
-O código foi estruturado para ser testável:
-
-### Unit Tests (useCalculator)
-
-```typescript
-test("handleNumberPress concatenates numbers correctly", () => {
-  const { result } = renderHook(() => useCalculator());
-  act(() => result.current.handleNumberPress("5"));
-  expect(result.current.display).toBe("5");
-});
-```
-
-### Integration Tests
-
-```typescript
-test("complete calculation flow", () => {
-  const { result } = renderHook(() => useCalculator());
-  // Série de ações que simulam cálculo
-  // Verificar resultado final e histórico
-});
-```
-
-### Component Tests
-
-```typescript
-test('Button renders with label or icon', () => {
-  const { getByText } = render(<Button label="5" onPress={() => {}} />);
-  expect(getByText("5")).toBeTruthy();
-});
-```
-
-## Conclusão
-
-A arquitetura foi projetada com foco em:
-
-- Clareza e legibilidade
-- Separação de responsabilidades
-- Facilidade de teste e manutenção
-- Escalabilidade para novos recursos
-- Performance otimizada para mobile
+- **Container/Presentational** — Calculator (container) usa useCalculator; Button, Display (presentational)
+- **Custom Hook** — Lógica encapsulada em hooks reutilizáveis
+- **Composição de Hooks** — useCalculator consome useHistory
+- **Funções Puras** — evaluate e formatter são independentes de React
+- **Context API** — Tema global sem prop drilling

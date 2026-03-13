@@ -1,19 +1,33 @@
 # Calculadora - React Native
 
-Aplicação mobile de calculadora desenvolvida com React Native e Expo, como projeto acadêmico da disciplina de Desenvolvimento Mobile.
+Aplicação mobile de calculadora baseada em expressão, inspirada na calculadora da Motorola. Desenvolvida com React Native e Expo como projeto acadêmico da disciplina de Desenvolvimento Mobile.
 
 ## Desenvolvido por
 
 - Davi Peterson Matos Conde
 - José Lucas Ferreira Chaves
 
+## Funcionalidades
+
+- **Expressões completas** — digite `12 + 34 × 5` e veja a expressão inteira no display
+- **Precedência de operadores** — multiplicação e divisão são avaliadas antes de soma e subtração
+- **Parênteses** — suporte a agrupamento com inserção inteligente de `(` e `)`
+- **Porcentagem** — converte o último número para percentual
+- **Raiz quadrada** — calcula a raiz do resultado ou da expressão
+- **Histórico** — últimos 50 cálculos salvos localmente (AsyncStorage)
+- **Temas** — claro, escuro ou automático (sistema)
+- **Display dinâmico** — fonte ajusta automaticamente ao tamanho da expressão, com cursor animado e scroll horizontal
+- **Backspace** — corrige erros removendo o último caractere
+- **Formatação pt-BR** — ponto como separador de milhar, vírgula como decimal
+
 ## Tecnologias Utilizadas
 
 - React Native
-- Expo
+- Expo 54
+- Expo Router (navegação)
 - TypeScript
-- AsyncStorage
-- Lucide React (ícones)
+- AsyncStorage (persistência)
+- Lucide React Native (ícones)
 - Prettier (formatação de código)
 
 ## Pré-requisitos
@@ -60,26 +74,19 @@ pnpm format         # Formata código com Prettier
 pnpm format:check   # Verifica formatação sem fazer alterações
 ```
 
-## Funcionalidades
-
-- Operações matemáticas básicas (adição, subtração, multiplicação, divisão)
-- Raiz quadrada
-- Histórico de cálculos persistido em armazenamento local
-- Decimal/vírgula para números fracionários
-- Botão de backspace para corrigir erros
-- Interface intuitiva e responsiva
-
 ## Como Usar
 
-1. A aplicação inicia com o display mostrando "0"
-2. Pressione os botões numéricos para digitar números
-3. Pressione um operador (+, -, ×, ÷) para selecionar a operação
-4. Digite o segundo número
-5. Pressione "=" para executar o cálculo
-6. O resultado é adicionado automaticamente ao histórico
-7. Pressione "AC" para limpar tudo
-8. Pressione o botão de histórico para ver cálculos anteriores
+1. A aplicação inicia com o display vazio e o cursor piscando
+2. Pressione os botões numéricos para construir a expressão
+3. Adicione operadores (+, -, ×, ÷) entre os números
+4. Use o botão `( )` para agrupar operações com parênteses
+5. Use `%` para converter o último número em percentual
+6. Pressione `=` para avaliar a expressão completa (com precedência de operadores)
+7. Após o resultado, digitar um número inicia nova expressão; digitar operador continua do resultado
+8. Pressione `AC` para limpar tudo
+9. Pressione o ícone de histórico no header para ver cálculos anteriores
+10. Pressione o ícone de menu para alternar entre temas (claro, escuro, sistema)
 
 ## Documentação Técnica
 
-Para entender a arquitetura completa da aplicação, estrutura de componentes, fluxo de dados e detalhamento de cada funcionalidade, consulte o arquivo [ARCHITECTURE.md](ARCHITECTURE.md).
+Para entender a arquitetura completa da aplicação, fluxo de dados, padrões de design e detalhamento de cada camada, consulte o arquivo [ARCHITECTURE.md](ARCHITECTURE.md).

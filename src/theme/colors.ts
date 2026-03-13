@@ -20,22 +20,23 @@ export const lightTheme = {
 } as const;
 
 export const darkTheme = {
-  background: "#000000",
-  displayBackground: "#000000",
+  background: "#1A1A1E",
+  displayBackground: "#1A1A1E",
   displayText: "#FFFFFF",
-  // Botões numéricos e operadores básicos
-  buttonDefault: "#2D2D2D",
+  // Botões numéricos e vírgula
+  buttonDefault: "#3A3F47",
   buttonDefaultText: "#FFFFFF",
-  buttonOperator: "#2D2D2D",
+  // Operadores ( ), %, ÷, ×, -, +
+  buttonOperator: "#5A6270",
   buttonOperatorText: "#FFFFFF",
-  // AC - azul escuro/teal
-  buttonAC: "#1E5F74",
+  // AC - azul vibrante
+  buttonAC: "#007AFF",
   buttonACText: "#FFFFFF",
   // =
-  buttonEqual: "#8B7AB8",
+  buttonEqual: "#D297DB",
   buttonEqualText: "#FFFFFF",
   // Backspace
-  buttonBackspace: "#2D2D2D",
+  buttonBackspace: "#3A3F47",
   buttonBackspaceText: "#FFFFFF",
 } as const;
 

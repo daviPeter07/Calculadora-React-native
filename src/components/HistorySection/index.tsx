@@ -21,7 +21,7 @@ export function HistorySection({
         styles.container,
         {
           borderBottomColor:
-            theme.background === "#000000"
+            theme.displayText === "#FFFFFF"
               ? "rgba(255, 255, 255, 0.1)"
               : "rgba(0, 0, 0, 0.08)",
         },

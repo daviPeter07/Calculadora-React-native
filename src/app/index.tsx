@@ -12,7 +12,7 @@ import { useCalculator } from "@/hooks/useCalculator";
 export default function Calculator() {
   const { display, history, showHistory, ...handlers } = useCalculator();
   const theme = useTheme();
-  const isDark = theme.background === "#000000";
+  const isDark = theme.displayText === "#FFFFFF";
 
   return (
     <>

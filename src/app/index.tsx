@@ -1,7 +1,6 @@
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
 import styles from "./index.style";
 import { useTheme } from "@/theme/ThemeContext";
 import { Header } from "@/components/Header";
@@ -11,23 +10,25 @@ import { ButtonGrid } from "@/components/ButtonGrid";
 import { useCalculator } from "@/hooks/useCalculator";
 
 export default function Calculator() {
-  const { display, history, ...handlers } = useCalculator();
+  const { display, history, showHistory, ...handlers } = useCalculator();
   const theme = useTheme();
-  const colorScheme = useColorScheme();
+  const isDark = theme.background === "#000000";
 
   return (
     <>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <SafeAreaView
         style={[styles.safeArea, { backgroundColor: theme.background }]}
         edges={["top"]}
       >
         <View style={styles.container}>
           <Header onHistoryPress={handlers.handleHistory} />
-          <HistorySection
-            history={history}
-            onClearHistory={handlers.handleClearHistory}
-          />
+          {showHistory && (
+            <HistorySection
+              history={history}
+              onClearHistory={handlers.handleClearHistory}
+            />
+          )}
           <Display value={display} />
           <ButtonGrid
             onNumberPress={handlers.handleNumberPress}

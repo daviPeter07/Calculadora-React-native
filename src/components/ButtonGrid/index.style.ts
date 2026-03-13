@@ -1,10 +1,11 @@
 import { StyleSheet } from "react-native";
 
-const GAP = 12;
+const GAP = 16;
 
 export const styles = StyleSheet.create({
   buttonsContainer: {
-    paddingBottom: 32,
+    paddingBottom: 40,
+    paddingTop: 8,
     gap: GAP,
   },
   row: {

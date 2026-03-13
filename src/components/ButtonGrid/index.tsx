@@ -76,7 +76,7 @@ export function ButtonGrid({
           icon={<Delete size={24} color={iconColor} />}
           onPress={onBackspacePress}
         />
-        <Button label="=" onPress={onEqualPress} variant="equal" doubleWidth />
+        <Button label="=" onPress={onEqualPress} variant="equal" />
       </View>
     </View>
   );

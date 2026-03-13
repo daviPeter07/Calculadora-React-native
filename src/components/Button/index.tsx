@@ -8,7 +8,6 @@ export function Button({
   icon,
   onPress,
   variant = "default",
-  doubleWidth = false,
 }: ButtonProps) {
   const theme = useTheme();
 
@@ -29,7 +28,6 @@ export function Button({
       style={({ pressed }) => [
         styles.button,
         { backgroundColor },
-        doubleWidth && styles.buttonDoubleWidth,
         pressed && { opacity: 0.7 },
       ]}
       onPress={onPress}

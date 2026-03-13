@@ -12,6 +12,21 @@ const parseDisplay = (value: string): number => {
   return parseFloat(cleaned) || 0;
 };
 
+const formatDisplayForInput = (display: string): string => {
+  if (display === "" || display === "Erro") return display;
+  const isNegative = display.startsWith("-");
+  const hasTrailingComma = display.endsWith(",");
+  const parts = display.split(",");
+  const intPart =
+    (parts[0] || "0").replace(/\./g, "").replace(/\D/g, "") || "0";
+  const decPart = parts[1] ? parts[1].replace(/\D/g, "") : "";
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  let result = decPart ? `${formattedInt},${decPart}` : formattedInt;
+  if (hasTrailingComma && !decPart) result += ",";
+  if (isNegative && intPart !== "0") result = "-" + result;
+  return result;
+};
+
 const getOpSymbol = (op: string) => (op === "*" ? "×" : op === "/" ? "÷" : op);
 
 export function useCalculator() {
@@ -28,8 +43,8 @@ export function useCalculator() {
 
   const displayValue =
     expression !== ""
-      ? expression + (waitingForNewValue ? "" : display)
-      : display;
+      ? expression + (waitingForNewValue ? "" : formatDisplayForInput(display))
+      : formatDisplayForInput(display);
 
   useEffect(() => {
     loadHistory();
@@ -105,9 +120,7 @@ export function useCalculator() {
       operationRef.current = operator;
       waitingForNewValueRef.current = true;
       setWaitingForNewValue(true);
-      setExpression(
-        formatDisplay(current) + " " + getOpSymbol(operator) + " "
-      );
+      setExpression(formatDisplay(current) + " " + getOpSymbol(operator) + " ");
       return;
     }
 

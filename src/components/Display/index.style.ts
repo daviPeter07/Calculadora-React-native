@@ -10,11 +10,16 @@ export const styles = StyleSheet.create({
     minHeight: 120,
   },
   display: {
-    fontSize: 64,
     fontWeight: "300",
   },
-  cursor: {
-    position: "absolute",
-    right: 0,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
   },
+  textRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  cursor: {},
 });

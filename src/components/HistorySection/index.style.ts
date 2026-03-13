@@ -35,4 +35,11 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 4,
     opacity: 0.9,
   },
+  emptyMessage: {
+    fontSize: 14,
+    paddingVertical: 20,
+    paddingHorizontal: 4,
+    opacity: 0.7,
+    textAlign: "center",
+  },
 });

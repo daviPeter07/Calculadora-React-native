@@ -8,35 +8,60 @@ interface HistorySectionProps {
   onClearHistory: () => void;
 }
 
-export function HistorySection({ history, onClearHistory }: HistorySectionProps) {
+export function HistorySection({
+  history,
+  onClearHistory,
+}: HistorySectionProps) {
   const theme = useTheme();
-
-  if (history.length === 0) return null;
+  const isEmpty = history.length === 0;
 
   return (
-    <View style={[styles.container, { borderBottomColor: theme.background === "#000000" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)" }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          borderBottomColor:
+            theme.background === "#000000"
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.08)",
+        },
+      ]}
+    >
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.displayText }]}>
           Histórico
         </Text>
-        <Pressable
-          onPress={onClearHistory}
-          style={({ pressed }) => [styles.clearButton, pressed && styles.pressed]}
-        >
-          <Trash2 size={20} color={theme.displayText} />
-        </Pressable>
-      </View>
-      <FlatList
-        data={history}
-        keyExtractor={(item, index) => `${item}-${index}`}
-        renderItem={({ item }) => (
-          <Text style={[styles.item, { color: theme.displayText }]}>{item}</Text>
+        {!isEmpty && (
+          <Pressable
+            onPress={onClearHistory}
+            style={({ pressed }) => [
+              styles.clearButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Trash2 size={20} color={theme.displayText} />
+          </Pressable>
         )}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        scrollEnabled={history.length > 3}
-        showsVerticalScrollIndicator={false}
-      />
+      </View>
+      {isEmpty ? (
+        <Text style={[styles.emptyMessage, { color: theme.displayText }]}>
+          Aqui é seu histórico de cálculos
+        </Text>
+      ) : (
+        <FlatList
+          data={history}
+          keyExtractor={(item, index) => `${item}-${index}`}
+          renderItem={({ item }) => (
+            <Text style={[styles.item, { color: theme.displayText }]}>
+              {item}
+            </Text>
+          )}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          scrollEnabled={history.length > 3}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 }

@@ -19,7 +19,7 @@ export function OptionsMenu({ visible, onClose }: OptionsMenuProps) {
   ];
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="none">
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable
           style={[styles.menu, { backgroundColor: theme.background }]}
